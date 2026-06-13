@@ -1,18 +1,18 @@
 import { Client, GatewayIntentBits, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
-import { fetchItemsCached } from './itemlist.ts';
-import { handleSearchItem } from './search.ts';
-import { showHomeView, handleCategorySelection } from './home.ts';
-import { handleTopSell } from './top_sell.ts';
+import { fetchItemsCached } from './src/itemlist.ts';
+import { handleSearchItem } from './src/search.ts';
+import { showHomeView, handleCategorySelection } from './src/home.ts';
+import { handleTopSell } from './src/top_sell.ts';
 
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent // Required to read message.content in Discord.js v14+
+        GatewayIntentBits.MessageContent
     ]
 });
 
-client.on('ready', async () => {
+client.on('clientReady', async () => {
     console.log(`Logged in as ${client.user?.tag}!`);
 
     try {
@@ -36,9 +36,9 @@ client.on('ready', async () => {
                     {
                         name: 'query',
                         description: 'ชื่อสินค้า หรือ ID ที่ต้องการค้นหา',
-                        type: 3, // String type
+                        type: 3,
                         required: true,
-                        autocomplete: true // Enable auto-complete
+                        autocomplete: true
                     }
                 ]
             },
@@ -49,9 +49,9 @@ client.on('ready', async () => {
                     {
                         name: 'query',
                         description: 'ชื่อสินค้า หรือ ID ที่ต้องการค้นหา',
-                        type: 3, // String type
+                        type: 3,
                         required: true,
-                        autocomplete: true // Enable auto-complete
+                        autocomplete: true
                     }
                 ]
             }
@@ -61,7 +61,7 @@ client.on('ready', async () => {
         await client.application?.commands.set(commands);
         console.log('Slash commands registered globally!');
 
-        // Clear guild-level commands to avoid duplicates (relying on global registration instead)
+
         const guilds = await client.guilds.fetch();
         for (const [guildId, guild] of guilds) {
             try {
@@ -77,25 +77,26 @@ client.on('ready', async () => {
     }
 });
 
-// Handle Slash Command Interactions, Autocomplete, Buttons, and Select Menus
 client.on('interactionCreate', async (interaction) => {
-    // 1. Handle Autocomplete Suggestions
     if (interaction.isAutocomplete()) {
         const focusedValue = interaction.options.getFocused().toLowerCase();
         try {
             const items = await fetchItemsCached();
             
-            // Filter list matching user input
-            const filtered = items.filter(item => 
-                item.name_th.toLowerCase().includes(focusedValue) ||
-                item.mc_id.toLowerCase().replace('minecraft:', '').includes(focusedValue)
-            );
+            const filtered = items.filter(item => {
+                const cleanId = item.mc_id.toLowerCase().replace(/^[^:]+:/, '');
+                return item.name_th.toLowerCase().includes(focusedValue) ||
+                       cleanId.includes(focusedValue) ||
+                       item.mc_id.toLowerCase().includes(focusedValue);
+            });
             
-            // Map to Discord choices (max 25 choices allowed by Discord API)
-            const choices = filtered.slice(0, 25).map(item => ({
-                name: `${item.name_th} (${item.mc_id.replace('minecraft:', '')})`,
-                value: item.mc_id
-            }));
+            const choices = filtered.slice(0, 25).map(item => {
+                const cleanId = item.mc_id.replace(/^[^:]+:/, '');
+                return {
+                    name: `${item.name_th} (${cleanId})`,
+                    value: item.mc_id
+                };
+            });
             
             await interaction.respond(choices);
         } catch (error) {
@@ -104,7 +105,6 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    // 2. Handle Button Clicks
     if (interaction.isButton()) {
         const { customId } = interaction;
         if (customId === 'back') {
@@ -129,7 +129,6 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    // 3. Handle Modal Submissions
     if (interaction.isModalSubmit()) {
         const { customId } = interaction;
         if (customId === 'search_modal') {
@@ -139,7 +138,6 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    // 4. Handle Select Menu selections
     if (interaction.isStringSelectMenu()) {
         const { customId } = interaction;
         if (customId === 'category_select') {
@@ -149,13 +147,11 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    // 5. Handle Chat Input Commands
     if (!interaction.isChatInputCommand()) return;
 
     const { commandName } = interaction;
 
     if (commandName === 'home' || commandName === 'itemlist') {
-        // Now /itemlist calls showHomeView directly, displaying the Home dashboard!
         await showHomeView(interaction);
     } else if (commandName === 'top_sell') {
         await handleTopSell(interaction);
@@ -165,12 +161,10 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-// Fallback: Keep text message commands active as well
 client.on('messageCreate', (msg) => {
     if (msg.content === '!ping') {
         msg.reply('Pong!');
     } else if (msg.content === '!home' || msg.content === '!itemlist') {
-        // Now !itemlist calls showHomeView directly, displaying the Home dashboard!
         showHomeView(msg);
     } else if (msg.content === '!top_sell') {
         handleTopSell(msg);

@@ -1,32 +1,29 @@
-import { Message, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageComponentInteraction, ChatInputCommandInteraction } from 'discord.js';
+import { Message, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageComponentInteraction, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import { generateGridImage, fetchItemsCached } from './itemlist.ts';
 import type { MarketItem } from './itemlist.ts';
 import { handleTopSell } from './top_sell.ts';
+import { attachTimeout } from './timeout.ts';
 
-// Helper to filter market items by category
 function getCategoryItems(items: MarketItem[], category: string): MarketItem[] {
     switch (category) {
         case 'category_block':
-            // Block (All Wool)
             return items.filter(item => item.mc_id.includes('wool'));
         case 'category_farm':
-            // Crops & Fungus
             const farmKeywords = ['wheat', 'carrot', 'potato', 'melon', 'pumpkin', 'beetroot', 'mushroom', 'fungus', 'wart', 'chorus_fruit'];
             return items.filter(item => farmKeywords.some(kw => item.mc_id.includes(kw)));
         case 'category_fish':
-            // All Seafood
             const fishKeywords = ['fish', 'cod', 'salmon', 'pufferfish'];
             return items.filter(item => fishKeywords.some(kw => item.mc_id.includes(kw)));
         case 'category_meat':
-            // All Livestock
             const meatKeywords = ['beef', 'pork', 'mutton', 'chicken', 'rabbit'];
             return items.filter(item => meatKeywords.some(kw => item.mc_id.includes(kw)));
+        case 'category_mod':
+            return items.filter(item => item.mc_id.includes('tastyvanilla'));
         default:
             return [];
     }
 }
 
-// Show the Home view containing the category select menu
 export async function showHomeView(target: Message | ChatInputCommandInteraction | MessageComponentInteraction, edit = false) {
     const embed = {
         title: '🏠 Rogerland Market | Home',
@@ -39,12 +36,18 @@ export async function showHomeView(target: Message | ChatInputCommandInteraction
         .setPlaceholder('เลือกหมวดหมู่สินค้า...')
         .addOptions([
             {
+                    label: 'Top 5 Sell Profit',
+                    value: 'category_top_sell',
+                    description: 'แสดง 5 อันดับสินค้าที่มีกำไรจากการขายสูงสุด',
+                    emoji: '🔥'
+            },
+            {
                 label: 'Block (All Wool)',
                 value: 'category_block',
                 description: 'แสดงราคาบล็อกขนแกะทั้งหมด',
                 emoji: '📦'
             },
-            {
+            {                
                 label: 'Farm (Crops & Fungus)',
                 value: 'category_farm',
                 description: 'แสดงราคาสินค้าเกษตร ข้าว แครอท แตงโม เห็ด ฯลฯ',
@@ -63,11 +66,11 @@ export async function showHomeView(target: Message | ChatInputCommandInteraction
                 emoji: '🥩'
             },
             {
-                label: 'Top 5 Sell Profit',
-                value: 'category_top_sell',
-                description: 'แสดง 5 อันดับสินค้าที่มีกำไรจากการขายสูงสุด',
-                emoji: '🔥'
-            }
+                label: 'Tasty Vanilla (Modded Food)',
+                value: 'category_mod',
+                description: 'แสดงราคาอาหารและพืชผลจากมอด Tasty Vanilla',
+                emoji: '🍅'
+            },
         ]);
 
     const row1 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
@@ -88,18 +91,19 @@ export async function showHomeView(target: Message | ChatInputCommandInteraction
         content: '',
         embeds: [embed],
         files: [],
-        attachments: [], // Clear any attachments when editing/updating
+        attachments: [],
         components: [row1, row2]
     };
 
+    let response: any;
     if (edit && 'update' in target) {
-        await (target as MessageComponentInteraction).update(payload);
+        response = await (target as MessageComponentInteraction).update(payload);
     } else if ('reply' in target) {
-        await (target as any).reply(payload);
+        response = await (target as any).reply(payload);
     }
+    await attachTimeout(target, response, [row1, row2]);
 }
 
-// Handle category selection from select menu
 export async function handleCategorySelection(interaction: MessageComponentInteraction, category: string) {
     if (category === 'category_top_sell') {
         await handleTopSell(interaction);
@@ -111,7 +115,7 @@ export async function handleCategorySelection(interaction: MessageComponentInter
         const categoryItems = getCategoryItems(items, category);
 
         if (categoryItems.length === 0) {
-            await interaction.followUp({ content: '❌ ไม่พบรายการสินค้าในหมวดหมู่นี้', ephemeral: true });
+            await interaction.followUp({ content: '** ไม่พบรายการสินค้าในหมวดหมู่นี้**', flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -121,9 +125,9 @@ export async function handleCategorySelection(interaction: MessageComponentInter
             case 'category_farm': categoryName = 'Farm (Crops & Fungus)'; break;
             case 'category_fish': categoryName = 'Fish (All Seafood)'; break;
             case 'category_meat': categoryName = 'Meat (All Livestock)'; break;
+            case 'category_mod': categoryName = 'Tasty Vanilla (Modded Food)'; break;
         }
 
-        // Generate grid image of matching items in the category
         const imageBuffer = await generateGridImage(categoryItems, categoryName);
         const fileName = `${category}.png`;
         const attachment = new AttachmentBuilder(imageBuffer, { name: fileName });
@@ -146,15 +150,16 @@ export async function handleCategorySelection(interaction: MessageComponentInter
                 .setStyle(ButtonStyle.Success)
         );
 
-        await interaction.editReply({
+        const response = await interaction.editReply({
             content: '',
             embeds: [embed],
             files: [attachment],
             components: [row]
         });
+        await attachTimeout(interaction, response, [row]);
 
     } catch (error) {
         console.error('Error handling category selection:', error);
-        await interaction.followUp({ content: `❌ เกิดข้อผิดพลาด: ${(error as Error).message}`, ephemeral: true });
+        await interaction.followUp({ content: `** เกิดข้อผิดพลาด: ${(error as Error).message}**`, flags: MessageFlags.Ephemeral });
     }
 }

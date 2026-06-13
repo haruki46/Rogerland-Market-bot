@@ -1,7 +1,7 @@
 import { Message, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ModalSubmitInteraction, MessageComponentInteraction } from 'discord.js';
 import { fetchItemsCached, getItemImagePath } from './itemlist.ts';
+import { attachTimeout } from './timeout.ts';
 
-// Handle Top 5 Sell Profit leaderboard
 export async function handleTopSell(target: Message | ChatInputCommandInteraction | ModalSubmitInteraction | MessageComponentInteraction) {
     const isInteraction = !('content' in target);
 
@@ -15,7 +15,6 @@ export async function handleTopSell(target: Message | ChatInputCommandInteractio
             throw new Error('Could not fetch market items.');
         }
 
-        // Map items and calculate the profit (sell_price - buy_price)
         const sortedItems = items
             .map(item => ({
                 ...item,
@@ -24,37 +23,37 @@ export async function handleTopSell(target: Message | ChatInputCommandInteractio
             .sort((a, b) => b.profit - a.profit);
 
         const top5 = sortedItems.slice(0, 5);
-        
-        // Emojis for ranking
         const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
 
         const embed: any = {
             title: '🔥 Rogerland Market | Top 5 Sell Profit',
             description: 'จัดอันดับ 5 สินค้าที่มีกำไรส่วนต่างจากการขายสูงสุดในขณะนี้\n*(คำนวณจาก ราคาขาย - ราคารับซื้อ)*\n',
-            color: 0xffa500, // Orange
-            fields: top5.map((item, idx) => ({
-                name: `${medals[idx]} **${item.name_th}**`,
-                value: `• ID: \`${item.mc_id.replace('minecraft:', '')}\`\n` +
-                       `• กำไร (Profit): **+${item.profit}**\n` +
-                       `• 🛒 Buy: **${item.buy_price}** | Sell: **${item.sell_price}**\n` +
-                       `• Spread: \`${item.spread_ratio}\``,
-                inline: false
-            }))
+            color: 0xffa500,
+            fields: top5.map((item, idx) => {
+                const cleanId = item.mc_id.split(':').pop() || item.mc_id;
+                return {
+                    name: `${medals[idx]} **${item.name_th}**`,
+                    value: `• ID: \`${cleanId}\`\n` +
+                           `• กำไร (Profit): **+${item.profit}**\n` +
+                           `• 🛒 Buy: **${item.buy_price}** | Sell: **${item.sell_price}**\n` +
+                           `• Spread: \`${item.spread_ratio}\``,
+                    inline: false
+                };
+            })
         };
 
         const files: AttachmentBuilder[] = [];
 
-        // Attach image of the #1 profitable item as embed thumbnail
         if (top5[0]) {
             const firstItemImagePath = getItemImagePath(top5[0].mc_id);
             if (firstItemImagePath) {
-                const fileName = top5[0].mc_id.replace('minecraft:', '') + '.png';
+                const cleanName = top5[0].mc_id.split(':').pop() || top5[0].mc_id;
+                const fileName = `${cleanName}.png`;
                 embed.thumbnail = { url: `attachment://${fileName}` };
                 files.push(new AttachmentBuilder(firstItemImagePath, { name: fileName }));
             }
         }
 
-        // Add back button to go back to Home
         const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
             new ButtonBuilder()
                 .setCustomId('back')
@@ -73,15 +72,17 @@ export async function handleTopSell(target: Message | ChatInputCommandInteractio
             components: [row]
         };
 
+        let response: any;
         if (isInteraction) {
-            await (target as any).editReply(payload);
+            response = await (target as any).editReply(payload);
         } else {
-            await (target as Message).reply(payload);
+            response = await (target as Message).reply(payload);
         }
+        await attachTimeout(target, response, [row]);
 
     } catch (error) {
         console.error('Error rendering top sell profit leaderboard:', error);
-        const errMsg = `❌ เกิดข้อผิดพลาดในการดึงข้อมูล: ${(error as Error).message}`;
+        const errMsg = `** เกิดข้อผิดพลาดในการดึงข้อมูล: ${(error as Error).message}**`;
         if (isInteraction) {
             await (target as any).editReply({ content: errMsg });
         } else {
