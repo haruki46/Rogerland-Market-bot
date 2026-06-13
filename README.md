@@ -5,7 +5,6 @@
 1. **Install Dependencies:**
    ```bash
    bun install
-   npm install
    ```
 
 2. **Configure Environment Variables (`.env`):**
