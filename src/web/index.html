@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rogerland Market Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-section">
+            <div class="logo-icon">R</div>
+            <h1>Rogerland Market Analyzer</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="sidebar">
+            <h2>Search Items</h2>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Search by name or ID..." id="searchInput">
+            </div>
+            <h2>Item List</h2>
+            <div class="item-list" id="itemList"></div>
+        </div>
+
+        <div class="main-panel">
+            <div class="tab-navigation">
+                <button class="tab-btn active" id="tabOverview">Market Tracker</button>
+                <button class="tab-btn" id="tabTopProfit">Top 10 Profit</button>
+                <button class="tab-btn" id="tabMostSell">Top 10 Selling</button>
+                <button class="tab-btn" id="tabChart" disabled>Price Chart</button>
+            </div>
+
+            <div id="overviewContainer" class="overview-grid"></div>
+            <div id="leaderboardContainer" class="leaderboard-grid" style="display: none;"></div>
+
+            <div class="card" id="dashboardCard" style="display: none;">
+                <div class="item-header">
+                    <div class="item-header-info">
+                        <div id="itemIconContainer"></div>
+                        <div>
+                            <div class="item-header-title" id="itemName">Item Name</div>
+                            <div class="item-header-id" id="itemId">minecraft:item_id</div>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <div class="timeframe-selector">
+                            <button class="timeframe-btn" data-range="30">30m</button>
+                            <button class="timeframe-btn" data-range="60">1h</button>
+                            <button class="timeframe-btn" data-range="720">12h</button>
+                            <button class="timeframe-btn" data-range="1440">1d</button>
+                            <button class="timeframe-btn" data-range="10080">7d</button>
+                            <button class="timeframe-btn active" data-range="all">All</button>
+                        </div>
+                        <button class="btn btn-primary" id="downloadCsvBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+
+            <div class="stats-grid" id="statsGrid" style="display: none;">
+                <div class="stat-card">
+                    <span class="stat-label">Buy Price</span>
+                    <span class="stat-value green" id="buyPriceVal">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Sell Price</span>
+                    <span class="stat-value pink" id="sellPriceVal">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Spread Ratio</span>
+                    <span class="stat-value" id="spreadRatioVal">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">24h Change</span>
+                    <span class="stat-value" id="change24hVal">-</span>
+                </div>
+            </div>
+
+            <div id="noSelectionView" class="card" style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 400px; color: var(--text-muted);">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 1rem;"><path d="M3 3v18h18M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+                <p>Select an item from the sidebar to view historical charts and export CSV data.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

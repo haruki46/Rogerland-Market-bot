@@ -1,8 +1,11 @@
-import { Client, GatewayIntentBits, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, AttachmentBuilder, Message } from 'discord.js';
 import { fetchItemsCached } from './src/itemlist.ts';
 import { handleSearchItem } from './src/search.ts';
 import { showHomeView, handleCategorySelection } from './src/home.ts';
 import { handleTopSell } from './src/top_sell.ts';
+import { generateHistoryGraphImage } from './src/history_price.ts';
+import { generateDashboardImage } from './src/dash_board.ts';
+import { handleMostSell } from './src/most_sell.ts';
 
 const client = new Client({
     intents: [
@@ -30,6 +33,10 @@ client.on('clientReady', async () => {
                 description: 'แสดง 5 อันดับสินค้าที่มีกำไรจากการขายสูงสุด'
             },
             {
+                name: 'most_sell',
+                description: 'แสดง 5 อันดับสินค้าที่มีปริมาณการขายสูงสุดใน 24 ชั่วโมง'
+            },
+            {
                 name: 'search',
                 description: 'ค้นหาข้อมูลสินค้าใน Rogerland Market',
                 options: [
@@ -54,13 +61,38 @@ client.on('clientReady', async () => {
                         autocomplete: true
                     }
                 ]
+            },
+            {
+                name: 'history_price',
+                description: 'แสดงกราฟประวัติราคาสินค้า (Statbot Style)',
+                options: [
+                    {
+                        name: 'query',
+                        description: 'ชื่อสินค้า หรือ ID ที่ต้องการดูประวัติราคา',
+                        type: 3,
+                        required: true,
+                        autocomplete: true
+                    }
+                ]
+            },
+            {
+                name: 'dashboard',
+                description: 'แสดงแดชบอร์ดข้อมูลประวัติราคาและการเปลี่ยนแปลง (Bazaar Style)',
+                options: [
+                    {
+                        name: 'query',
+                        description: 'ชื่อสินค้า หรือ ID ที่ต้องการดูแดชบอร์ด',
+                        type: 3,
+                        required: true,
+                        autocomplete: true
+                    }
+                ]
             }
         ];
 
         console.log('Registering global slash commands...');
         await client.application?.commands.set(commands);
         console.log('Slash commands registered globally!');
-
 
         const guilds = await client.guilds.fetch();
         for (const [guildId, guild] of guilds) {
@@ -76,6 +108,88 @@ client.on('clientReady', async () => {
         console.error('Error setting up slash commands:', error);
     }
 });
+
+async function handleHistoryCommand(interaction: any, query: string) {
+    await interaction.deferReply();
+    try {
+        const items = await fetchItemsCached() as any[];
+        const item = items.find(i => i.mc_id === query || i.name_th.toLowerCase().includes(query.toLowerCase()) || i.mc_id.toLowerCase().includes(query.toLowerCase()));
+        if (!item) {
+            await interaction.editReply(`❌ ไม่พบสินค้าที่ตรงกับคำค้นหา: \`${query}\``);
+            return;
+        }
+        const buffer = await generateHistoryGraphImage(item, item.history || []);
+        const attachment = new AttachmentBuilder(buffer, { name: 'history_price.png' });
+        await interaction.editReply({ files: [attachment] });
+    } catch (error) {
+        console.error(error);
+        await interaction.editReply(`❌ เกิดข้อผิดพลาด: ${(error as Error).message}`);
+    }
+}
+
+async function handleDashboardCommand(interaction: any, query: string) {
+    await interaction.deferReply();
+    try {
+        const items = await fetchItemsCached() as any[];
+        const item = items.find(i => i.mc_id === query || i.name_th.toLowerCase().includes(query.toLowerCase()) || i.mc_id.toLowerCase().includes(query.toLowerCase()));
+        if (!item) {
+            await interaction.editReply(`❌ ไม่พบสินค้าที่ตรงกับคำค้นหา: \`${query}\``);
+            return;
+        }
+        const buffer = await generateDashboardImage(item, item.history || []);
+        const attachment = new AttachmentBuilder(buffer, { name: 'dashboard.png' });
+        await interaction.editReply({ files: [attachment] });
+    } catch (error) {
+        console.error(error);
+        await interaction.editReply(`❌ เกิดข้อผิดพลาด: ${(error as Error).message}`);
+    }
+}
+
+async function handleHistoryMessage(msg: Message, query: string) {
+    if (!query) {
+        msg.reply('ℹ️ วิธีใช้: `!history <ชื่อสินค้า หรือ ID>`');
+        return;
+    }
+    const loading = await msg.reply('⏳ กำลังสร้างกราฟประวัติราคา...');
+    try {
+        const items = await fetchItemsCached() as any[];
+        const item = items.find(i => i.mc_id === query || i.name_th.toLowerCase().includes(query.toLowerCase()) || i.mc_id.toLowerCase().includes(query.toLowerCase()));
+        if (!item) {
+            await loading.edit(`❌ ไม่พบสินค้าที่ตรงกับคำค้นหา: \`${query}\``);
+            return;
+        }
+        const buffer = await generateHistoryGraphImage(item, item.history || []);
+        const attachment = new AttachmentBuilder(buffer, { name: 'history_price.png' });
+        await loading.delete();
+        await msg.reply({ files: [attachment] });
+    } catch (error) {
+        console.error(error);
+        await loading.edit(`❌ เกิดข้อผิดพลาด: ${(error as Error).message}`);
+    }
+}
+
+async function handleDashboardMessage(msg: Message, query: string) {
+    if (!query) {
+        msg.reply('ℹ️ วิธีใช้: `!dashboard <ชื่อสินค้า หรือ ID>`');
+        return;
+    }
+    const loading = await msg.reply('⏳ กำลังสร้างแดชบอร์ด...');
+    try {
+        const items = await fetchItemsCached() as any[];
+        const item = items.find(i => i.mc_id === query || i.name_th.toLowerCase().includes(query.toLowerCase()) || i.mc_id.toLowerCase().includes(query.toLowerCase()));
+        if (!item) {
+            await loading.edit(`❌ ไม่พบสินค้าที่ตรงกับคำค้นหา: \`${query}\``);
+            return;
+        }
+        const buffer = await generateDashboardImage(item, item.history || []);
+        const attachment = new AttachmentBuilder(buffer, { name: 'dashboard.png' });
+        await loading.delete();
+        await msg.reply({ files: [attachment] });
+    } catch (error) {
+        console.error(error);
+        await loading.edit(`❌ เกิดข้อผิดพลาด: ${(error as Error).message}`);
+    }
+}
 
 client.on('interactionCreate', async (interaction) => {
     if (interaction.isAutocomplete()) {
@@ -155,9 +269,17 @@ client.on('interactionCreate', async (interaction) => {
         await showHomeView(interaction);
     } else if (commandName === 'top_sell') {
         await handleTopSell(interaction);
+    } else if (commandName === 'most_sell') {
+        await handleMostSell(interaction);
     } else if (commandName === 'search' || commandName === 'check') {
         const query = interaction.options.getString('query', true);
         await handleSearchItem(interaction, query);
+    } else if (commandName === 'history_price') {
+        const query = interaction.options.getString('query', true);
+        await handleHistoryCommand(interaction, query);
+    } else if (commandName === 'dashboard') {
+        const query = interaction.options.getString('query', true);
+        await handleDashboardCommand(interaction, query);
     }
 });
 
@@ -168,12 +290,24 @@ client.on('messageCreate', (msg) => {
         showHomeView(msg);
     } else if (msg.content === '!top_sell') {
         handleTopSell(msg);
+    } else if (msg.content === '!most_sell') {
+        handleMostSell(msg);
     } else if (msg.content === '!search' || msg.content.startsWith('!search ')) {
         const query = msg.content === '!search' ? '' : msg.content.slice(8).trim();
         handleSearchItem(msg, query);
     } else if (msg.content === '!check' || msg.content.startsWith('!check ')) {
         const query = msg.content === '!check' ? '' : msg.content.slice(7).trim();
         handleSearchItem(msg, query);
+    } else if (msg.content === '!history_price' || msg.content.startsWith('!history_price ') || msg.content === '!history' || msg.content.startsWith('!history ')) {
+        const isHistoryShort = msg.content.startsWith('!history ') && !msg.content.startsWith('!history_price');
+        const sliceLen = isHistoryShort ? 9 : 15;
+        const query = msg.content.slice(sliceLen).trim();
+        handleHistoryMessage(msg, query);
+    } else if (msg.content === '!dashboard' || msg.content.startsWith('!dashboard ') || msg.content === '!dash' || msg.content.startsWith('!dash ')) {
+        const isDashShort = msg.content.startsWith('!dash ') && !msg.content.startsWith('!dashboard');
+        const sliceLen = isDashShort ? 6 : 11;
+        const query = msg.content.slice(sliceLen).trim();
+        handleDashboardMessage(msg, query);
     }
 });
 

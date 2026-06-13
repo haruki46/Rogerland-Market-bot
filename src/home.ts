@@ -2,6 +2,7 @@ import { Message, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyl
 import { generateGridImage, fetchItemsCached } from './itemlist.ts';
 import type { MarketItem } from './itemlist.ts';
 import { handleTopSell } from './top_sell.ts';
+import { handleMostSell } from './most_sell.ts';
 import { attachTimeout } from './timeout.ts';
 
 function getCategoryItems(items: MarketItem[], category: string): MarketItem[] {
@@ -40,6 +41,12 @@ export async function showHomeView(target: Message | ChatInputCommandInteraction
                     value: 'category_top_sell',
                     description: 'แสดง 5 อันดับสินค้าที่มีกำไรจากการขายสูงสุด',
                     emoji: '🔥'
+            },
+            {
+                    label: 'Top 5 Most Sell',
+                    value: 'category_most_sell',
+                    description: 'แสดง 5 อันดับสินค้าที่มีปริมาณการขายสูงสุดใน 24 ชั่วโมง',
+                    emoji: '💰'
             },
             {
                 label: 'Block (All Wool)',
@@ -107,6 +114,11 @@ export async function showHomeView(target: Message | ChatInputCommandInteraction
 export async function handleCategorySelection(interaction: MessageComponentInteraction, category: string) {
     if (category === 'category_top_sell') {
         await handleTopSell(interaction);
+        return;
+    }
+
+    if (category === 'category_most_sell') {
+        await handleMostSell(interaction);
         return;
     }
 
