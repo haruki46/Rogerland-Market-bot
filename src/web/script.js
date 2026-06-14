@@ -198,6 +198,15 @@ function renderOverviewGrid(items) {
 
 function selectItem(item) {
     selectedItem = item;
+    
+    // Close sidebar drawer on mobile after selection
+    const sidebarEl = document.querySelector('.sidebar');
+    const backdropEl = document.getElementById('sidebarBackdrop');
+    if (sidebarEl && backdropEl) {
+        sidebarEl.classList.remove('open');
+        backdropEl.classList.remove('open');
+    }
+
     document.querySelectorAll('.item-row').forEach(row => {
         const id = row.querySelector('.item-id').textContent;
         const cleanId = item.mc_id.replace(/^[^:]+:/, '');
@@ -403,5 +412,22 @@ tabChart.addEventListener('click', () => {
         statsGrid.style.display = 'grid';
     }
 });
+
+// Setup mobile sidebar toggle listeners
+const menuToggle = document.getElementById('menuToggle');
+const sidebar = document.querySelector('.sidebar');
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+if (menuToggle && sidebar && sidebarBackdrop) {
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        sidebarBackdrop.classList.toggle('open');
+    });
+    
+    sidebarBackdrop.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        sidebarBackdrop.classList.remove('open');
+    });
+}
 
 fetchMarketPrices();

@@ -19,6 +19,13 @@ interface ApiResponse {
 let cachedItems: MarketItem[] = [];
 let cacheTime = 0;
 
+type OnUpdateCallback = (items: MarketItem[]) => void | Promise<void>;
+const updateCallbacks: OnUpdateCallback[] = [];
+
+export function registerOnItemsUpdate(cb: OnUpdateCallback) {
+    updateCallbacks.push(cb);
+}
+
 export async function fetchItemsCached(): Promise<MarketItem[]> {
     const now = Date.now();
     if (cachedItems.length > 0 && now - cacheTime < 60000) {
@@ -35,6 +42,19 @@ export async function fetchItemsCached(): Promise<MarketItem[]> {
             if (data.items && Array.isArray(data.items)) {
                 cachedItems = data.items;
                 cacheTime = now;
+
+                // Trigger update callbacks
+                for (const cb of updateCallbacks) {
+                    try {
+                        const res = cb(cachedItems);
+                        if (res instanceof Promise) {
+                            res.catch(err => console.error('Error in items update callback:', err));
+                        }
+                    } catch (err) {
+                        console.error('Error in items update callback:', err);
+                    }
+                }
+
                 return cachedItems;
             }
         }

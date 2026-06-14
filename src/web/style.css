@@ -648,3 +648,225 @@ h1 {
     font-family: monospace;
 }
 
+/* --- Mobile / Responsive Additions --- */
+.menu-toggle-btn {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    /* Header layout adjustments */
+    header {
+        padding: 1rem 1.25rem;
+    }
+    
+    .menu-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--panel-border);
+        color: var(--text-main);
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .menu-toggle-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: var(--text-muted);
+    }
+    
+    .logo-section {
+        gap: 0.5rem;
+    }
+    
+    h1 {
+        font-size: 1.15rem;
+    }
+    
+    /* Layout Container structure */
+    .container {
+        grid-template-columns: 1fr;
+        margin: 1rem auto;
+        padding: 0 1rem;
+        gap: 1rem;
+    }
+    
+    /* Sidebar Drawer Style */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -340px;
+        width: 320px;
+        height: 100vh;
+        max-height: 100vh;
+        z-index: 1000;
+        border-radius: 0 16px 16px 0;
+        border-top: none;
+        border-bottom: none;
+        border-left: none;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.6);
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: var(--panel-bg);
+    }
+    
+    .sidebar.open {
+        left: 0;
+    }
+    
+    /* Sidebar Backdrop Overlay */
+    .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    
+    .sidebar-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    
+    /* Scrollable Horizontal Tabs */
+    .tab-navigation {
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        gap: 0.25rem;
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .tab-navigation::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    .tab-navigation::-webkit-scrollbar-thumb {
+        background: var(--panel-border);
+        border-radius: 2px;
+    }
+    
+    .tab-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        display: inline-block;
+    }
+    
+    .tab-btn.active::after {
+        bottom: -0.8rem;
+    }
+    
+    /* Stats Grid Adjustments */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+        gap: 0.3rem;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+    }
+    
+    .stat-value {
+        font-size: 1.15rem;
+    }
+    
+    /* Item Header & Details stacking */
+    .item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.25rem;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .item-header-info {
+        gap: 0.75rem;
+    }
+    
+    .item-header-title {
+        font-size: 1.25rem;
+    }
+    
+    .item-header-id {
+        font-size: 0.8rem;
+    }
+    
+    .item-header .actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .timeframe-selector {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.25rem;
+    }
+    
+    .timeframe-btn {
+        flex: 1;
+        padding: 0.4rem 0;
+        font-size: 0.75rem;
+        text-align: center;
+    }
+    
+    .btn#downloadCsvBtn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.7rem;
+    }
+    
+    /* Chart Height Adjustment */
+    .chart-container {
+        height: 280px;
+    }
+    
+    /* Leaderboard Adjustments */
+    .leaderboard-card {
+        padding: 0.75rem 1rem;
+        gap: 0.75rem;
+    }
+    
+    .leaderboard-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .leaderboard-stats {
+        width: 100%;
+        justify-content: space-between;
+        gap: 1rem;
+        border-top: 1px dashed var(--panel-border);
+        padding-top: 0.5rem;
+    }
+    
+    .leaderboard-stat-item {
+        align-items: flex-start;
+        gap: 0.1rem;
+    }
+    
+    .leaderboard-stat-value {
+        font-size: 1rem;
+    }
+    
+    .leaderboard-secondary-stats {
+        font-size: 0.75rem;
+    }
+}

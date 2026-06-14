@@ -6,7 +6,8 @@
   "scripts": {
     "start": "bun run --parallel index.ts ./src/web/index.ts ",
     "web": "bun ./src/web/index.ts",
-    "bot": "bun index.ts"
+    "bot": "bun index.ts",
+    "log": "bun log/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -18,6 +19,8 @@
     "@napi-rs/canvas": "^1.0.0",
     "chart.js": "^4.5.1",
     "discord.js": "^14.26.4",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "localtunnel": "^2.0.2",
+    "xlsx": "^0.18.5"
   }
 }

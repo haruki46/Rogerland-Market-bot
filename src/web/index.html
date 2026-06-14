@@ -13,11 +13,19 @@
 <body>
     <header>
         <div class="logo-section">
+            <button class="menu-toggle-btn" id="menuToggle" aria-label="Toggle Sidebar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
             <div class="logo-icon">R</div>
             <h1>Rogerland Market Analyzer</h1>
         </div>
     </header>
 
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="container">
         <div class="sidebar">
             <h2>Search Items</h2>
